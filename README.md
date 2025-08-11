@@ -1,132 +1,95 @@
-# Organizador de Archivos SUNAT con Sincronización en OneDrive
+# SUNAT File Finder & Processor
 
-Esta herramienta permite organizar automáticamente archivos de SUNAT descargados y sincronizarlos con tu cuenta de OneDrive para tener un respaldo en la nube.
+Una herramienta avanzada para localizar, clasificar, y empaquetar archivos de comprobantes electrónicos de SUNAT. Busca de forma recursiva en directorios, inspecciona archivos ZIP anidados y puede consolidar todos los archivos encontrados en un único paquete.
 
-## Características
+## Características Principales
 
-- **Organización automática**: Identifica y clasifica diferentes tipos de documentos de SUNAT (facturas, boletas, recibos, etc.)
-- **Estructura de carpetas**: Organiza los documentos en una estructura de carpetas específica para cada tipo de documento
-- **Sincronización con OneDrive**: Sube automáticamente los archivos organizados a tu cuenta de OneDrive
-- **Soporte para archivos ZIP**: Extrae y organiza documentos SUNAT contenidos dentro de archivos ZIP
-
-## Requisitos previos
-
-1. Python 3.6 o superior
-2. Bibliotecas necesarias (se instalan automáticamente)
-3. Una cuenta de OneDrive
-4. Token de acceso para OneDrive (ver instrucciones abajo)
+- **Clasificación Avanzada**: Identifica una gran variedad de documentos de SUNAT (`facturas`, `boletas`, `recibos`, `fichas RUC`, `multas`, etc.) usando patrones de nombres de archivo específicos.
+- **Análisis de ZIPs Anidados**: Busca archivos de SUNAT no solo en el directorio principal, sino también dentro de archivos `.zip`, incluyendo ZIPs que están dentro de otros ZIPs.
+- **Doble Interfaz (CLI y API)**: Ofrece tanto una interfaz de línea de comandos (CLI) para uso directo como una API web para integraciones.
+- **Dos Modos de Operación**:
+  1.  **Find (Encontrar)**: Solo busca y lista los archivos, mostrando su clasificación y ubicación (incluso dentro de un ZIP).
+  2.  **Process (Procesar)**: Busca los archivos, los extrae (si están en un ZIP) y los consolida en un único archivo `.zip` de salida, con la opción de eliminar los originales.
 
 ## Instalación
 
-Se recomienda usar un entorno virtual para contener las dependencias:
+1.  **Entorno virtual (Recomendado):**
+    ```bash
+    python -m venv venv
+    # Windows
+    venv\Scripts\activate
+    # Linux/macOS
+    # source venv/bin/activate
+    ```
 
-```bash
-# Crear entorno virtual
-python -m venv venv_sunat
-
-# Activar el entorno virtual
-# En Windows:
-venv_sunat\Scripts\activate
-# En Linux/Mac:
-# source venv_sunat/bin/activate
-
-# Instalar las dependencias
-pip install -r requirements.txt
-```
-
-## Configuración
-
-### 1. Obtener un token de acceso para OneDrive
-
-Para acceder a tu cuenta de OneDrive, necesitas un token de acceso. Puedes obtenerlo siguiendo estos pasos:
-
-1. Ve a [Portal de Azure](https://portal.azure.com) e inicia sesión
-2. Ve a "Registros de aplicaciones" > "Nuevo registro"
-3. Asigna un nombre a tu aplicación (ej. "SUNAT Organizer")
-4. En "URI de redirección" elige "Web" y agrega: `http://localhost:8080/`
-5. Haz clic en "Registrar"
-6. Ve a "Permisos de API" > "Agregar un permiso" > "Microsoft Graph" > "Permisos delegados"
-7. Busca y selecciona los siguientes permisos:
-   - Files.ReadWrite
-   - Files.ReadWrite.All
-   - User.Read
-8. Haz clic en "Agregar permisos" y luego en "Conceder consentimiento de administrador"
-9. Ve a "Certificados y secretos" > "Nuevo secreto de cliente"
-10. Asigna un nombre al secreto, selecciona un período de expiración y haz clic en "Agregar"
-11. **¡IMPORTANTE!** Copia el "Valor" del secreto (solo se muestra una vez)
-
-A continuación, necesitas obtener un token de acceso utilizando alguna de estas opciones:
-- [Herramienta Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer)
-- [Postman](https://www.postman.com/) siguiendo [estas instrucciones](https://learn.microsoft.com/en-us/graph/auth-v2-user)
-- Utilizar un script personalizado con MSAL (Microsoft Authentication Library)
-
-El token de acceso será solicitado la primera vez que ejecutes la aplicación.
-
-### 2. Primera ejecución
-
-La primera vez que ejecutes la herramienta, se te pedirá ingresar el token de acceso de OneDrive que obtuviste en el paso anterior.
+2.  **Instalar dependencias:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ## Uso
 
-### Organización local y sincronización con OneDrive
+### Modo 1: Interfaz de Línea de Comandos (CLI)
 
+La CLI tiene dos comandos principales: `find` y `process`.
+
+#### Comando `find`
+
+Busca y lista todos los archivos SUNAT que encuentra.
+
+**Sintaxis:**
+`python main.py cli find <ruta_de_busqueda> [-o <archivo_salida.json>]`
+
+**Ejemplo:**
 ```bash
-python sunat_onedrive_sync.py --origen "C:\Descargas" --destino "C:\SUNAT_Organizados" --carpeta-onedrive "SUNAT_Documentos"
+python main.py cli find "D:\\Comprobantes"
 ```
 
-### Solo organización local (sin sincronización con OneDrive)
+#### Comando `process`
 
+Busca los archivos, los extrae y los empaqueta en un nuevo ZIP.
+
+**Sintaxis:**
+`python main.py cli process <ruta_de_busqueda> <ruta_zip_salida> [--delete-originals]`
+
+**Ejemplo:**
 ```bash
-python sunat_onedrive_sync.py --origen "C:\Descargas" --destino "C:\SUNAT_Organizados" --solo-local
+# Simplemente empaqueta los archivos
+python main.py cli process "D:\\Comprobantes" "D:\\Consolidados\\SUNAT_2024.zip"
+
+# Empaqueta y elimina los archivos originales
+python main.py cli process "D:\\Comprobantes" "D:\\Consolidados\\SUNAT_2024.zip" --delete-originals
 ```
 
-### Opciones disponibles
+---
 
-- `--origen`, `-o`: Directorio donde buscar archivos de SUNAT (requerido)
-- `--destino`, `-d`: Directorio donde organizar los archivos localmente (requerido)
-- `--extension`, `-e`: Extensión de archivos a buscar (predeterminado: '.pdf')
-- `--carpeta-onedrive`, `-c`: Nombre de la carpeta en OneDrive donde sincronizar (predeterminado: 'SUNAT_Documentos')
-- `--verbose`, `-v`: Mostrar información detallada durante la ejecución
-- `--solo-local`, `-l`: No sincronizar con OneDrive, solo organizar localmente
+### Modo 2: API Web
 
-## Estructura de carpetas creada
+Inicia un servidor web para acceder a la funcionalidad a través de endpoints HTTP.
 
+**Iniciar el servidor:**
+```bash
+python main.py api --host 127.0.0.1 --port 8000
 ```
-SUNAT_Documentos/
-├── Reportes_Ficha_RUC/
-├── Retenciones_y_Detracciones/
-├── Constancias/
-├── Valores/
-├── Facturas/
-├── Boletas/
-├── Notas_Credito/
-├── Recibos_Honorarios/
-├── Declaraciones/
-└── Otros_Documentos_SUNAT/
-```
+Accede a la documentación interactiva en `http://127.0.0.1:8000/docs`.
 
-## Solución de problemas
+#### Endpoint `/find`
 
-### Problemas de autenticación con OneDrive
+Busca y devuelve una lista de archivos en formato JSON.
+- **URL:** `/find`
+- **Método:** `POST`
+- **Cuerpo (Body):** `{"path": "D:\\Comprobantes"}`
 
-Si encuentras problemas con la autenticación, puedes eliminar el archivo de configuración y volver a intentarlo:
+#### Endpoint `/process`
 
-```
-# En Windows:
-del %USERPROFILE%\.config\onedrive_sunat\config.ini
-
-# En Linux/Mac:
-rm ~/.config/onedrive_sunat/config.ini
-```
-
-### Los tokens de acceso caducan
-
-Los tokens de acceso de OneDrive suelen caducar después de cierto tiempo (generalmente 1 hora). Si esto ocurre, necesitarás obtener un nuevo token siguiendo los pasos anteriores.
-
-### Logs
-
-Los archivos de registro se almacenan en la carpeta `logs/` y pueden ser útiles para diagnosticar problemas.
-
-## Licencia
-
-Este proyecto está licenciado bajo los términos de la licencia MIT. 
+Busca, empaqueta y opcionalmente elimina los archivos originales.
+- **URL:** `/process`
+- **Método:** `POST`
+- **Cuerpo (Body):** 
+  ```json
+  {
+    "search_path": "D:\\Comprobantes",
+    "output_zip_path": "D:\\Consolidados\\SUNAT_2024.zip",
+    "delete_originals": false
+  }
+  ```

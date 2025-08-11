@@ -1,3 +1,2 @@
-onedrive-sharepoint-python-sdk>=0.0.2
-requests>=2.25.0
-pathlib>=1.0.1 
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
